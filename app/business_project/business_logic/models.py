@@ -1,3 +1,4 @@
+from datetime import timezone
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 import re
@@ -65,3 +66,37 @@ class User(AbstractBaseUser):
     class Meta:
         verbose_name = 'User'
         db_table = 'authetication_sd_user'
+
+class Product(models.Model):
+    id = models.PositiveIntegerField(primary_key=True)
+    title = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField()
+    category = models.CharField(max_length=255)
+    image = models.URLField()
+    rating_rate = models.DecimalField(max_digits=3, decimal_places=1)
+    rating_count = models.PositiveIntegerField()
+    stock_quant = models.PositiveIntegerField(default=0)
+
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date_ordered = models.DateTimeField(default=timezone.now)
+    total_price = models.DecimalField(max_digits=8, decimal_places=2)
+    status = models.CharField(max_length=20, default='Pending')
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+
+
