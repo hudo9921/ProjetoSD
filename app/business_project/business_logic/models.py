@@ -66,10 +66,10 @@ class User(AbstractBaseUser):
 
     class Meta:
         verbose_name = 'User'
-        db_table = 'authetication_sd_user'
+        db_table = 'authentication_sd_user'
 
 class Product(models.Model):
-    id = models.PositiveIntegerField(primary_key=True)
+    # id = models.PositiveIntegerField(primary_key=True)
     title = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()

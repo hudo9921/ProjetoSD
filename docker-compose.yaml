@@ -1,6 +1,6 @@
 version: "3"
 services:
-  server_authetication:
+  server_authentication:
     build:
       context: .
       dockerfile: ./docker/django.dockerfile

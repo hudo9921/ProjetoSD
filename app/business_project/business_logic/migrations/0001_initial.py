@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'verbose_name': 'User',
-                'db_table': 'authetication_sd_user',
+                'db_table': 'authentication_sd_user',
             },
         ),
     ]

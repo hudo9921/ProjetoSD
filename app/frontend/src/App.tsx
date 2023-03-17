@@ -1,15 +1,15 @@
 import React from "react";
 import { Route, Routes, BrowserRouter } from "react-router-dom";
 import "./App.css";
-import { Home, PageNotFound } from "./pages";
+import { Home, PageNotFound, ProductsPage } from "./pages";
 
 function App() {
   return (
-    <div id='app'>
+    <div id="app">
       <BrowserRouter>
         <Routes>
           <Route path="" element={<Home />} />
-          <Route path="/test" element={<div>AAA</div>} />
+          <Route path="/products" element={<ProductsPage />} />
           <Route path="*" element={<PageNotFound />} />
         </Routes>
       </BrowserRouter>

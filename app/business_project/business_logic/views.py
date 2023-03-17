@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Cart, CartItem, Product
-from .serializers import CartItemSerializer
+from .serializers import *
+from rest_framework import generics
 
 class AddToCartAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -26,3 +27,33 @@ class AddToCartAPIView(APIView):
             CartItem.objects.create(cart=cart, product=product, price=product.price)
             serializer = CartItemSerializer(cart_item)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+
+class ProductListCreate(generics.ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+    def get_permissions(self):
+        if self.request.method != 'GET':
+            self.permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+        self.permission_classes = []
+        return super(self.__class__, self).get_permissions()
+
+class ProductRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    lookup_field = 'id'
+
+    def get_permissions(self):
+        if self.request.method != 'GET':
+            self.permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+        self.permission_classes = []
+        return super(self.__class__, self).get_permissions()
+    
+
+class TopRatedProducts(generics.ListAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = []
+
+    def get_queryset(self):
+        return Product.objects.all().order_by('-rating_rate')
