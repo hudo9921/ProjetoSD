@@ -12,11 +12,11 @@ class AddToCartAPIView(APIView):
     def post(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
         cart, created = Cart.objects.get_or_create(user=request.user)
-        cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
-        if not item_created:
+        cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product, price=product.price)
+        if  item_created:
             cart_item.quantity += 1
             cart_item.save()
-            serializer = CartItemSerializer()
+            serializer = CartItemSerializer(cart_item)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             CartItem.objects.create(cart=cart, product=product, price=product.price)
