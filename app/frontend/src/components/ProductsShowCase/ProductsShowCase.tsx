@@ -1,4 +1,4 @@
-import { Box, Button, SxProps, Theme, Typography } from "@mui/material";
+import { Box, Button, Grid, SxProps, Theme, Typography } from "@mui/material";
 import React, { useMemo, useState } from "react";
 import useTopRatedProducts from "../../hooks/use-top-rated-products";
 import { Product } from "../../types";
@@ -44,7 +44,7 @@ const ProductsShowCase = ({
   sx,
   textFormatNumber,
   buttonText,
-  handleClick
+  handleClick,
 }: ProductsShowCaseProps) => {
   const [isHovered, setIsHovered] = useState<boolean>(false);
 
@@ -90,7 +90,24 @@ const ProductsShowCase = ({
             )}
           </Box>
           <Box sx={styles.products}>
-            {products.map((product, index) => {
+            <Grid
+              container
+              spacing={{ xs: 2, md: 3 }}
+              columns={products.length > 3 ? { xs: 5, sm: 2, md: 20 } : { xs: 1, sm: 3, md: 12 }}
+            >
+              {products.map((product, index) => (
+                <Grid item xs={2} sm={4} md={4} key={index}>
+                  <ProductCard
+                    key={index}
+                    product={product}
+                    handleMouseEnter={handleMouseEnter}
+                    handleMouseLeave={handleMouseLeave}
+                    textFormatNumber={textFormatNumber}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            {/* {products.map((product, index) => {
               return (
                 <ProductCard
                   key={index}
@@ -100,7 +117,7 @@ const ProductsShowCase = ({
                   textFormatNumber={textFormatNumber}
                 />
               );
-            })}
+            })} */}
           </Box>
         </>
       ) : (
