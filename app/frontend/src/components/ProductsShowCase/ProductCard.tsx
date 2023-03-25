@@ -1,5 +1,7 @@
-import { Box, darken, SxProps, Theme } from "@mui/material";
-import React, { useCallback, useMemo } from "react";
+import { Box, darken } from "@mui/material";
+import React, { useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Routes } from "../../constants";
 import { Product } from "../../types";
 
 const styles = {
@@ -22,7 +24,7 @@ const styles = {
     "&:hover": {
       backgroundColor: darken("#b65dff", 0.4),
     },
-    boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)'
+    boxShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)",
   },
   prodImage: {
     position: "static",
@@ -81,6 +83,7 @@ const ProductCard = ({
   handleMouseLeave,
   textFormatNumber,
 }: ProductCardProps) => {
+  const navigate = useNavigate();
   const titleFormater = useCallback(
     (value: string) => {
       let aux = textFormatNumber ? textFormatNumber : 0;
@@ -89,11 +92,16 @@ const ProductCard = ({
     [textFormatNumber]
   );
 
+  const handleClicked = (id: number) => {
+    navigate(Routes.PRODUCT + `${id}`);
+  };
+
   return (
     <Box
       sx={styles.root}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onClick={() => handleClicked(product.id)}
     >
       <Box fontSize={25} sx={styles.rate}>
         <strong>{product.rating_rate}</strong>

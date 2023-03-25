@@ -5,7 +5,8 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Cart, CartItem, Product
 from .serializers import *
-from rest_framework import generics
+from rest_framework import generics, filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 class AddToCartAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -27,6 +28,9 @@ class AddToCartAPIView(APIView):
 class ProductListCreate(generics.ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['title',]
+    filterset_fields = ['category',]
 
     def get_permissions(self):
         if self.request.method != 'GET':
@@ -52,3 +56,11 @@ class TopRatedProducts(generics.ListAPIView):
 
     def get_queryset(self):
         return Product.objects.all().order_by('-rating_rate')
+    
+
+class ProductsCategories(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        categories = Product.objects.all().values_list('category', flat=True).distinct()
+        return Response(categories, status=status.HTTP_200_OK)

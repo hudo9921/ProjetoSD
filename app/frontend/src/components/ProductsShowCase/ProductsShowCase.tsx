@@ -1,6 +1,5 @@
 import { Box, Button, Grid, SxProps, Theme, Typography } from "@mui/material";
-import React, { useMemo, useState } from "react";
-import useTopRatedProducts from "../../hooks/use-top-rated-products";
+import React, { useState } from "react";
 import { Product } from "../../types";
 import ProductCard from "./ProductCard";
 
@@ -107,17 +106,6 @@ const ProductsShowCase = ({
                 </Grid>
               ))}
             </Grid>
-            {/* {products.map((product, index) => {
-              return (
-                <ProductCard
-                  key={index}
-                  product={product}
-                  handleMouseEnter={handleMouseEnter}
-                  handleMouseLeave={handleMouseLeave}
-                  textFormatNumber={textFormatNumber}
-                />
-              );
-            })} */}
           </Box>
         </>
       ) : (

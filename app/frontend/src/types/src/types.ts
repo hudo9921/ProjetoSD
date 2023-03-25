@@ -7,6 +7,7 @@ export interface Product {
     rating_rate: string;
     rating_count: number;
     stock_quant: number;
+    price: number;
 }
 
 export interface ProductGetRequest {
