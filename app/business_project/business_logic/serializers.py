@@ -8,6 +8,23 @@ class CartItemSerializer(serializers.ModelSerializer):
         model = CartItem
         fields = '__all__'
 
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = '__all__'
+        
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'        
+
+class CartSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'total_price']
+
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
