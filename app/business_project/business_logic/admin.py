@@ -9,12 +9,20 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 class CartAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'products')
+    list_display = ('id', 'user', 'products', 'total_price')
     list_filter=('user','id')
-    
+    readonly_fields = ('products', 'total_price')
 
     def products(self, obj):
-        return ", ".join([item.product.title for item in obj.cartitem_set.all()])
+        items = [f"{item.product.title} ({item.quantity})" for item in obj.cartitem_set.all()]
+        return ", ".join(items)
+
+    def total_price(self, obj):
+        total = sum([item.price * item.quantity for item in obj.cartitem_set.all()])
+        return f"${total:.2f}"
+    
+    products.short_description = "Products in cart"
+    total_price.short_description = "Total price"
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
