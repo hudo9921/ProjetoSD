@@ -15,16 +15,15 @@ class AddToCartAPIView(APIView):
     def post(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
         cart, created = Cart.objects.get_or_create(user=request.user)
-        cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product, price=product.price)
+        quantity = int(request.data.get('quantity', 1))
+        cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product, price=product.price,defaults={'quantity':quantity})
         
-        if item_created:
-            serializer = CartItemSerializer(cart_item)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            cart_item.quantity += 1
+        if not item_created:
+            cart_item.quantity += quantity
             cart_item.save()
-            serializer = CartItemSerializer(cart_item)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        serializer = CartItemSerializer(cart_item)
+        return Response(serializer.data, status=status.HTTP_200_OK if not item_created else status.HTTP_201_CREATED)
 
 class ClearCartAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -36,6 +35,21 @@ class ClearCartAPIView(APIView):
             return Response({'message': 'carrinho limpo'}, status=status.HTTP_200_OK)
         except Cart.DoesNotExist:
             return Response({'error': 'carrinho nao existe'}, status=status.HTTP_404_NOT_FOUND)
+  
+class GetUserCartAPIView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CartSerializer
+
+    def get(self, request, *args, **kwargs): 
+        cart = Cart.objects.get(user=request.user)
+        cart_items = cart.cartitem_set.all()
+        cart_serializer = self.serializer_class(cart)
+        items_serializer = CartItemSerializer(cart_items, many=True)
+        data = {
+            "cart": cart_serializer.data,
+            "items": items_serializer.data
+        }
+        return Response(data, status=status.HTTP_200_OK)
         
 class CreateOrderAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
