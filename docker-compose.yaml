@@ -14,6 +14,8 @@ services:
       - sd-network
     volumes:
       - ./app/auth_project/:/app/
+    depends_on:
+      - db
   server_business:
     build:
       context: .
@@ -28,6 +30,9 @@ services:
       - sd-network
     volumes:
       - ./app/business_project/:/app/
+    depends_on:
+      - db
+      - server_authentication
 
   db:
     image: postgres:14.2

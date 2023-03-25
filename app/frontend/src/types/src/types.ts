@@ -16,3 +16,16 @@ export interface ProductGetRequest {
     previous: string | undefined;
     results: Product[]  
 }
+
+export interface TokenPostRequest {
+    access: string;
+    refresh: string;
+}
+
+export interface User {
+    cpf: string;
+    email: string;
+    full_name: string;
+    address: string;
+}
+

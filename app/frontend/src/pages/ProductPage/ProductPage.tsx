@@ -1,4 +1,7 @@
 import {
+  Alert,
+  AlertColor,
+  AlertTitle,
   Box,
   Button,
   Grid,
@@ -6,19 +9,13 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Header } from "../../components";
 import useProduct from "../../hooks/use-product";
-import {
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
-} from "@chakra-ui/number-input";
 import ProductCard from "../../components/ProductsShowCase/ProductCard";
 import useProducts from "../../hooks/use-products";
+import { useAuth } from "../../context";
 
 const styles = {
   root: {
@@ -68,15 +65,6 @@ const styles = {
     "& .MuiTypography-root": {
       color: "white",
     },
-    "& .MuiOutlinedInput-root": {
-      "& fieldset": {
-        borderColor: "#413a41",
-        borderWidth: "2px",
-      },
-      "&:hover fieldset": {
-        borderColor: "#b65dff",
-      },
-    },
     "& input": {
       color: "white",
     },
@@ -97,6 +85,27 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
   },
+  rate: {
+    position: "absolute",
+    top: 110,
+    left: 650,
+    justifyContent: "center",
+    display: "flex",
+    alignItems: "center",
+    width: "8rem",
+    height: "3rem",
+    borderRadius: 6,
+    bgcolor: "#b65dff",
+    zIndex: 1000,
+  },
+  alert: {
+    position: 'absolute',
+    top: 70,
+    width: '60%',
+    color: 'white',
+    bgcolor: '#1e1e1e',
+    border: "2px solid #413a41",
+  }
 };
 
 type Props = {};
@@ -104,10 +113,14 @@ type Props = {};
 const ProductPage = (props: Props) => {
   const { id } = useParams();
   const { product, refetch, isFetching, isLoading } = useProduct(id ?? "");
+  const [quantity, setQuantity] = useState<number>(0);
+  const [open, setOpen] = useState(false);
+  const [severity, setSeverity] = useState<AlertColor | undefined>('success')
+  const [alertMessage, setAlertMessage] = useState<string>("")
 
   const { products, refetch: refetchProducts } = useProducts(
     10,
-    '',
+    "",
     product!?.category
   );
 
@@ -115,11 +128,33 @@ const ProductPage = (props: Props) => {
     refetch();
   }, [id, refetch, refetchProducts]);
 
+  const IsOutOfStock = useMemo(() => product!?.stock_quant <= 0, [product]);
+  const { accessToken } = useAuth();
+
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      if (!accessToken) {
+        setOpen(true);
+        setSeverity("error")
+        setAlertMessage("Please login first.")
+      }
+      else if (quantity > product!?.stock_quant || quantity < 1) {
+        setOpen(true);
+        setSeverity("error")
+        setAlertMessage("Invalid quantity.")
+      }
+      else {
+        setOpen(true);
+        setSeverity("success")
+        setAlertMessage("Product added to cart.")
+      }
+    },
+    [product, quantity]
+  );
+
   if (isFetching || isLoading) {
     return <Box sx={styles.root}></Box>;
   }
-
-  console.log(product);
 
   return (
     <Box sx={styles.root}>
@@ -136,9 +171,19 @@ const ProductPage = (props: Props) => {
           gap: "2rem",
         }}
       >
+        {open && (
+          <Alert sx={styles.alert} onClose={() => setOpen(false)} severity={severity}>
+            <strong>{alertMessage}</strong>
+          </Alert>
+        )}
         {product && products && (
           <Box sx={styles.productPageBox}>
             <Box sx={styles.productBox}>
+              {IsOutOfStock && (
+                <Box fontSize={25} sx={styles.rate}>
+                  <strong>Sold Out</strong>
+                </Box>
+              )}
               <Box
                 sx={{
                   backgroundImage: `url(${product.image})`,
@@ -179,9 +224,9 @@ const ProductPage = (props: Props) => {
                       p: 3,
                       fontSize: "1.1rem",
                       borderBottom: "2px solid #413a41",
-                      height: '10rem',
-                      overflowX: 'none',
-                      overflowY: 'scroll'
+                      height: "10rem",
+                      overflowX: "none",
+                      overflowY: "scroll",
                     }}
                   >
                     {product.description}
@@ -196,15 +241,30 @@ const ProductPage = (props: Props) => {
                     <Typography>Price: {product.price} US$</Typography>
                     <Typography>In Stock: {product.stock_quant}.</Typography>
                     <TextField
-                      sx={styles.searchInput}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          "& fieldset": {
+                            borderColor: "#413a41",
+                            borderWidth: "2px",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: IsOutOfStock ? null : "#b65dff",
+                          },
+                        },
+                        ...styles.searchInput,
+                      }}
                       id="outlined-search"
                       label="Quantity"
-                      // value={searchQuery}
-                      // onChange={(event) => setSearchQuery(event.target.value)}
-                      type="search"
+                      disabled={IsOutOfStock}
+                      value={quantity}
+                      onChange={(event) =>
+                        setQuantity(parseInt(event.target.value))
+                      }
+                      type="number"
                     />
                     <Button
                       variant="contained"
+                      disabled={IsOutOfStock}
                       sx={{
                         bgcolor: "#b65dff",
                         "&:hover": { bgcolor: "#7b3ead" },
@@ -212,7 +272,7 @@ const ProductPage = (props: Props) => {
                         height: "3.5rem",
                         color: "white",
                       }}
-                      // onClick={}
+                      onClick={handleClick}
                     >
                       <strong>Add to cart</strong>
                     </Button>
@@ -237,8 +297,6 @@ const ProductPage = (props: Props) => {
                         <ProductCard
                           key={index}
                           product={product}
-                          // handleMouseEnter={handleMouseEnter}
-                          // handleMouseLeave={handleMouseLeave}
                           textFormatNumber={20}
                         />
                       </Grid>

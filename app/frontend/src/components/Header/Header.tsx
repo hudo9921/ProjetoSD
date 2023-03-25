@@ -16,7 +16,22 @@ import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import { Routes } from "../../constants";
+import {
+  Alert,
+  AlertColor,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  TextField,
+} from "@mui/material";
+import useLogIn from "../../hooks/use-login-in";
+import useUserInfo from "../../hooks/use-user-info";
+import { User } from "../../types";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -100,10 +115,26 @@ export default function Header() {
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
       <MenuItem onClick={handleMenuClose}>My account</MenuItem>
+      <MenuItem onClick={() => {
+        setTokens(null, null)
+        setUser(null)
+      }}>Log out</MenuItem>
     </Menu>
   );
+
+  const styles = {
+    alert: {
+      position: "absolute",
+      top: 300,
+      left: 670,
+      width: "24%",
+      color: "white",
+      bgcolor: "#1e1e1e",
+      border: "2px solid #413a41",
+      zIndex: 10000,
+    },
+  };
 
   const mobileMenuId = "primary-search-account-menu-mobile";
   const renderMobileMenu = (
@@ -158,13 +189,71 @@ export default function Header() {
   );
 
   const navigate = useNavigate();
+  const { accessToken, refreshToken, setTokens } = useAuth();
+  const { mutateAsync } = useLogIn();
+  const { mutateAsync: getUserInfo } = useUserInfo();
+
+  const [open, setOpen] = React.useState(false);
+  const [cpf, setCpf] = React.useState<string>("");
+  const [password, setPassword] = React.useState<string>("");
+  const [openAlert, setOpenAlert] = React.useState(false);
+  const [severity, setSeverity] = React.useState<AlertColor | undefined>(
+    "success"
+  );
+  const [alertMessage, setAlertMessage] = React.useState<string>("");
+  const [user, setUser] = React.useState<User | null>(null)
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
 
   const handleLinkClick = React.useCallback(() => {
     navigate(Routes.HOME);
   }, [navigate]);
 
+  const handleLogIn = () => {
+    mutateAsync({ cpf, password })
+      .then(({ access, refresh }) => {
+        setOpenAlert(true);
+        setSeverity("success");
+        setAlertMessage("Successfully logged in.");
+        setOpen(false);
+        setTokens(access, refresh);
+      })
+      .catch((reason) => {
+        setOpenAlert(true);
+        setSeverity("error");
+        setAlertMessage("Unable to log in.");
+      });
+  };
+
+  React.useEffect(() => {
+    if (accessToken) {
+      getUserInfo()
+        .then((data) => {
+          setUser(data)
+        })
+        .catch(() => {
+          console.log("deu ruim");
+        });
+    }
+  }, [accessToken, getUserInfo]);
+
   return (
     <Box sx={{ flexGrow: 1 }}>
+      {openAlert && (
+        <Alert
+          sx={styles.alert}
+          onClose={() => setOpenAlert(false)}
+          severity={severity}
+        >
+          <strong>{alertMessage}</strong>
+        </Alert>
+      )}
       <AppBar position="static" sx={{ bgcolor: "#2c2c2c" }}>
         <Toolbar>
           <IconButton
@@ -184,9 +273,9 @@ export default function Header() {
               sx={{
                 display: { xs: "none", sm: "block" },
                 fontSize: "1.5rem",
-                '&:hover': {
-                  cursor: 'pointer'
-                }
+                "&:hover": {
+                  cursor: "pointer",
+                },
               }}
             >
               shop
@@ -249,6 +338,96 @@ export default function Header() {
             >
               <AccountCircle />
             </IconButton>
+            {!accessToken && !user ? (
+              <>
+                <Box
+                  sx={{
+                    pl: 1,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onClick={handleClickOpen}
+                >
+                  <Typography
+                    variant="h6"
+                    noWrap
+                    component="div"
+                    sx={{
+                      display: { xs: "none", sm: "block", bgcolor: "red" },
+                      fontSize: "1.3rem",
+                      "&:hover": {
+                        cursor: "pointer",
+                      },
+                    }}
+                  >
+                    Log In
+                  </Typography>
+                </Box>
+                <Dialog open={open} onClose={handleClose}>
+                  <DialogTitle>Log In</DialogTitle>
+                  <DialogContent>
+                    <DialogContentText>
+                      Enter a valid user cpf and password to log in at this
+                      site.
+                    </DialogContentText>
+                    <TextField
+                      autoFocus
+                      margin="dense"
+                      id="cpf"
+                      label="Cpf"
+                      value={cpf}
+                      onChange={(event) => setCpf(event.currentTarget.value)}
+                      fullWidth
+                      variant="standard"
+                    />
+                    <TextField
+                      autoFocus
+                      margin="dense"
+                      id="password"
+                      label="Password"
+                      type="password"
+                      value={password}
+                      onChange={(event) =>
+                        setPassword(event.currentTarget.value)
+                      }
+                      fullWidth
+                      variant="standard"
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={handleClose}>Cancel</Button>
+                    <Button onClick={handleLogIn}>Log In</Button>
+                    <Button onClick={handleClose}>Create an account</Button>
+                  </DialogActions>
+                </Dialog>{" "}
+              </>
+            ) : (
+              <Box
+                sx={{
+                  pl: 1,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+                onClick={handleClickOpen}
+              >
+                <Typography
+                  variant="h6"
+                  noWrap
+                  component="div"
+                  sx={{
+                    display: { xs: "none", sm: "block", bgcolor: "red" },
+                    fontSize: "1.3rem",
+                    "&:hover": {
+                      cursor: "pointer",
+                    },
+                  }}
+                >
+                  {user?.full_name}
+                </Typography>
+              </Box>
+            )}
           </Box>
           <Box sx={{ display: { xs: "flex", md: "none" } }}>
             <IconButton
