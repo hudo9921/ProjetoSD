@@ -14,6 +14,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import MoreIcon from "@mui/icons-material/MoreVert";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -32,6 +33,7 @@ import {
 import useLogIn from "../../hooks/use-login-in";
 import useUserInfo from "../../hooks/use-user-info";
 import { User } from "../../types";
+import useGetUserCart from "../../hooks/use-get-user-cart";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -192,6 +194,7 @@ export default function Header() {
   const { accessToken, refreshToken, setTokens } = useAuth();
   const { mutateAsync } = useLogIn();
   const { mutateAsync: getUserInfo } = useUserInfo();
+  const { mutateAsync: getUserCart} = useGetUserCart();
 
   const [open, setOpen] = React.useState(false);
   const [cpf, setCpf] = React.useState<string>("");
@@ -202,6 +205,7 @@ export default function Header() {
   );
   const [alertMessage, setAlertMessage] = React.useState<string>("");
   const [user, setUser] = React.useState<User | null>(null)
+  const [cartQuantity, setCartQuantity] = React.useState<number>(0)
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -240,8 +244,17 @@ export default function Header() {
         .catch(() => {
           console.log("deu ruim");
         });
+      getUserCart()
+        .then((data) => {
+          let aux: number = 0;
+          data.items.forEach((item) => aux = aux + item.quantity)
+          setCartQuantity(aux)
+        })
+        .catch(() => {
+          console.log("deu ruim");
+        });
     }
-  }, [accessToken, getUserInfo]);
+  }, [accessToken, getUserCart, getUserInfo]);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -297,9 +310,12 @@ export default function Header() {
               size="large"
               aria-label="show 4 new mails"
               color="inherit"
+              onClick={() => {
+                navigate(Routes.USERCART)
+              }}
             >
               <Badge
-                badgeContent={4}
+                badgeContent={cartQuantity}
                 color="error"
                 sx={{
                   "& .MuiBadge-colorError": {
@@ -307,7 +323,7 @@ export default function Header() {
                   },
                 }}
               >
-                <MailIcon />
+                <ShoppingCartIcon />
               </Badge>
             </IconButton>
             <IconButton

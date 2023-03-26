@@ -2,7 +2,7 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import React from "react";
 import { Route, Routes, BrowserRouter } from "react-router-dom";
 import "./App.css";
-import { Home, PageNotFound, ProductsPage, ProductPage } from "./pages";
+import { Home, PageNotFound, ProductsPage, ProductPage, UserCart } from "./pages";
 import { AuthProvider} from "./context/AuthContext";
 
 function App() {
@@ -23,6 +23,7 @@ function App() {
               <Route path="" element={<Home />} />
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/products/:id" element={<ProductPage />} />
+              <Route path="/cart/" element={<UserCart />} />
               <Route path="*" element={<PageNotFound />} />
             </Routes>
           </BrowserRouter>

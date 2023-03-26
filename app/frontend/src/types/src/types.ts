@@ -1,3 +1,5 @@
+import { AxiosResponse } from "axios";
+
 export interface Product {
     id: number;
     title: string;
@@ -27,5 +29,26 @@ export interface User {
     email: string;
     full_name: string;
     address: string;
+}
+
+export interface GenericPostRequest<T> extends AxiosResponse {
+    data: T;
+}
+
+export interface Cart {
+    id: number;
+    user: string;
+}
+
+export interface CartItem {
+    id: number;
+    quantity: number;
+    price: string;
+    cart: number;
+    product: Product;
+}
+export interface UserCartGetRequest {
+    cart: Cart;
+    items: CartItem[]
 }
 

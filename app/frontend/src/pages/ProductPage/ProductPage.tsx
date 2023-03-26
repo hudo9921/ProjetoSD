@@ -16,6 +16,7 @@ import useProduct from "../../hooks/use-product";
 import ProductCard from "../../components/ProductsShowCase/ProductCard";
 import useProducts from "../../hooks/use-products";
 import { useAuth } from "../../context";
+import useAddProductToCart from "../../hooks/use-add-product-to-cart";
 
 const styles = {
   root: {
@@ -99,13 +100,13 @@ const styles = {
     zIndex: 1000,
   },
   alert: {
-    position: 'absolute',
+    position: "absolute",
     top: 70,
-    width: '60%',
-    color: 'white',
-    bgcolor: '#1e1e1e',
+    width: "60%",
+    color: "white",
+    bgcolor: "#1e1e1e",
     border: "2px solid #413a41",
-  }
+  },
 };
 
 type Props = {};
@@ -115,8 +116,8 @@ const ProductPage = (props: Props) => {
   const { product, refetch, isFetching, isLoading } = useProduct(id ?? "");
   const [quantity, setQuantity] = useState<number>(0);
   const [open, setOpen] = useState(false);
-  const [severity, setSeverity] = useState<AlertColor | undefined>('success')
-  const [alertMessage, setAlertMessage] = useState<string>("")
+  const [severity, setSeverity] = useState<AlertColor | undefined>("success");
+  const [alertMessage, setAlertMessage] = useState<string>("");
 
   const { products, refetch: refetchProducts } = useProducts(
     10,
@@ -129,27 +130,34 @@ const ProductPage = (props: Props) => {
   }, [id, refetch, refetchProducts]);
 
   const IsOutOfStock = useMemo(() => product!?.stock_quant <= 0, [product]);
+  const { mutateAsync } = useAddProductToCart(product!?.id, quantity);
   const { accessToken } = useAuth();
 
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLElement>) => {
       if (!accessToken) {
         setOpen(true);
-        setSeverity("error")
-        setAlertMessage("Please login first.")
-      }
-      else if (quantity > product!?.stock_quant || quantity < 1) {
+        setSeverity("error");
+        setAlertMessage("Please login first.");
+      } else if (quantity > product!?.stock_quant || quantity < 1) {
         setOpen(true);
-        setSeverity("error")
-        setAlertMessage("Invalid quantity.")
-      }
-      else {
-        setOpen(true);
-        setSeverity("success")
-        setAlertMessage("Product added to cart.")
+        setSeverity("error");
+        setAlertMessage("Invalid quantity.");
+      } else {
+        mutateAsync({ quantity })
+        .then((data) => {
+          setOpen(true);
+          setSeverity("success");
+          setAlertMessage("Product added to cart.");
+        })
+        .catch((reason) => {
+          setOpen(true);
+          setSeverity("error");
+          setAlertMessage(reason.message);
+        })
       }
     },
-    [product, quantity]
+    [accessToken, mutateAsync, product, quantity]
   );
 
   if (isFetching || isLoading) {
@@ -172,7 +180,11 @@ const ProductPage = (props: Props) => {
         }}
       >
         {open && (
-          <Alert sx={styles.alert} onClose={() => setOpen(false)} severity={severity}>
+          <Alert
+            sx={styles.alert}
+            onClose={() => setOpen(false)}
+            severity={severity}
+          >
             <strong>{alertMessage}</strong>
           </Alert>
         )}
