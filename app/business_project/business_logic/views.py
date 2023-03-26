@@ -1,3 +1,4 @@
+from xml.dom import ValidationErr
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -16,6 +17,13 @@ class AddToCartAPIView(APIView):
         product = get_object_or_404(Product, id=product_id)
         cart, created = Cart.objects.get_or_create(user=request.user)
         quantity = int(request.data.get('quantity', 1))
+        
+        if quantity > product.stock_quant:
+            raise ValidationErr('Not enough stock for this product')
+        
+        product.stock_quant -= quantity
+        product.save()
+        
         cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product, price=product.price,defaults={'quantity':quantity})
         
         if not item_created:
@@ -35,7 +43,7 @@ class ClearCartAPIView(APIView):
             return Response({'message': 'carrinho limpo'}, status=status.HTTP_200_OK)
         except Cart.DoesNotExist:
             return Response({'error': 'carrinho nao existe'}, status=status.HTTP_404_NOT_FOUND)
-  
+        
 class GetUserCartAPIView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CartSerializer
@@ -50,11 +58,36 @@ class GetUserCartAPIView(generics.RetrieveAPIView):
             "items": items_serializer.data
         }
         return Response(data, status=status.HTTP_200_OK)
-        
+
+class UpdateCartItemQuantityAPIView(generics.UpdateAPIView):
+    queryset = CartItem.objects.all()
+    serializer_class = CartItemSerializer
+    lookup_field  = 'id'
+    def put(self, request, *args, **kwargs):
+        cart_item = self.get_object()
+        new_quantity = request.data.get('quantity', None)
+        if (new_quantity is not None) & (new_quantity!=0):
+            cart_item.quantity = new_quantity
+            cart_item.save()
+            serializer = self.get_serializer(cart_item)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Please provide a quantity'}, status=status.HTTP_400_BAD_REQUEST)
+
+class RemoveFromCartAPIView(APIView):
+    def delete(self, request, cart_item_id):
+        cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
+        cart_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class CreateOrderAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def post(self, request, *args, **kwargs):
         user_cart = Cart.objects.get(user=request.user)
+        
+        if not user_cart.cartitem_set.exists():
+            return Response({'error': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
+        
         order = Order.objects.create(user=user_cart.user, total_price=Decimal('0'), status='Pending')
 
         for cart_item in user_cart.cartitem_set.all():
@@ -73,8 +106,26 @@ class CreateOrderAPIView(APIView):
         serializer = OrderSerializer(order)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
 
+class GetUserOrder(generics.ListAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        orders = Order.objects.filter(user=user)
+        return orders
+
+class GetUserOrderItems(generics.ListAPIView):
+    serializer_class = OrderItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        order_id = self.kwargs['order_id']
+        queryset = OrderItem.objects.filter(order__id=order_id, order__user=user)
+        return queryset
+        
 class ProductListCreate(generics.ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
