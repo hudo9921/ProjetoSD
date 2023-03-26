@@ -1,5 +1,8 @@
 import {
+  Alert,
+  AlertColor,
   alpha,
+  Button,
   IconButton,
   Paper,
   Table,
@@ -17,11 +20,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import useGetUserCart from "../../hooks/use-get-user-cart";
 import useLogIn from "../../hooks/use-login-in";
 import { useAuth } from "../../context";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Routes } from "../../constants";
 import { useEffect, useState } from "react";
 import useProductMutation from "../../hooks/use-product-mutation";
 import { CartItem, Product } from "../../types";
+import useCreateOrder from "../../hooks/use-create-order";
+import useClearCart from "../../hooks/use-clear-cart";
 
 const styles = {
   backgroundColor: "#1e1e1e",
@@ -42,7 +47,7 @@ const styles = {
     height: "100%",
     border: `2px solid #413a41`,
     display: "flex",
-    alignItems: "center",
+    alignItems: "end",
     justifyContent: "center",
     flexDirection: "column",
     mt: 4,
@@ -77,8 +82,27 @@ const styles = {
     },
   },
   tableCell: {
-    height: '1rem'
-  }
+    height: "1rem",
+  },
+  actionsBox: {
+    width: "50%",
+    height: "30%",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gridGap: "2rem",
+    "& .MuiButton-root": {
+      mt: 3,
+    },
+  },
+  alert: {
+    position: "absolute",
+    top: 70,
+    left: 345,
+    width: "60%",
+    color: "white",
+    bgcolor: "#1e1e1e",
+    border: "2px solid #413a41",
+  },
 };
 
 type Props = {};
@@ -91,29 +115,19 @@ interface Row {
 }
 
 const UserCart = (props: Props) => {
-  function createData(
-    name: string,
-    calories: number,
-    fat: number,
-    carbs: number,
-    protein: number
-  ) {
-    return { name, calories, fat, carbs, protein };
-  }
-
   const { mutateAsync } = useGetUserCart();
   const { mutateAsync: mutateProd } = useProductMutation();
+  const { mutateAsync: mutateCreateOrder } = useCreateOrder();
+  const { mutateAsync: mutateClearCart } = useClearCart();
   const { accessToken } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<Row[]>([]);
 
-  const rows = [
-    createData("Frozen yoghurt", 159, 6.0, 24, 4.0),
-    createData("Ice cream sandwich", 237, 9.0, 37, 4.3),
-    createData("Eclair", 262, 16.0, 24, 6.0),
-    createData("Cupcake", 305, 3.7, 67, 4.3),
-    createData("Gingerbread", 356, 16.0, 49, 3.9),
-  ];
+  const [openAlert, setOpenAlert] = useState(false);
+  const [severity, setSeverity] = useState<AlertColor | undefined>(
+    "success"
+  );
+  const [alertMessage, setAlertMessage] = useState<string>("");
 
   useEffect(() => {
     if (!accessToken) {
@@ -135,11 +149,49 @@ const UserCart = (props: Props) => {
     }
   }, [accessToken, mutateAsync, mutateProd, navigate]);
 
-  console.log(data);
+  const handleBuyCart = () => {
+    mutateCreateOrder()
+      .then((data) => {
+        setOpenAlert(true)
+        setSeverity("success")
+        setAlertMessage("Cart bought successfully.")
+      })
+      .catch((reason) => {
+        setOpenAlert(true)
+        setSeverity("error")
+        setAlertMessage(reason)
+      });
+
+    setData([]);
+  };
+
+  const handleClearCart = () => {
+    mutateClearCart()
+    .then((data) => {
+      setOpenAlert(true)
+      setSeverity("success")
+      setAlertMessage("Cart cleared successfully.")
+    })
+    .catch((reason) => {
+      setOpenAlert(true)
+      setSeverity("error")
+      setAlertMessage(reason)
+    });
+    setData([]);
+  }
 
   return (
     <Box sx={styles}>
       <Header />
+      {openAlert && (
+        <Alert
+          sx={styles.alert}
+          onClose={() => setOpenAlert(false)}
+          severity={severity}
+        >
+          <strong>{alertMessage}</strong>
+        </Alert>
+      )}
       <Box
         sx={{
           fontSize: "5rem",
@@ -181,10 +233,15 @@ const UserCart = (props: Props) => {
                   {data.map((row, i) => (
                     <TableRow
                       key={i}
-                      sx={{ "&:last-child td, &:last-child th": { border: 0 }}}
+                      sx={{
+                        "&:last-child td, &:last-child th": { border: 0 },
+                        height: "5rem",
+                      }}
                     >
                       <TableCell component="th" scope="row">
-                        {row.product.title}
+                        <Link to={`${Routes.PRODUCT}${row.product.id}`}>
+                          {row.product.title}
+                        </Link>
                       </TableCell>
                       <TableCell align="center">{row.price}</TableCell>
                       <TableCell align="center">{row.quantity}</TableCell>
@@ -213,7 +270,63 @@ const UserCart = (props: Props) => {
               </Table>
             </TableContainer>
           </Box>
-          <Box sx={{ width: "100%", height: "30%" }}></Box>
+          <Box sx={styles.actionsBox}>
+            <Button
+              variant="contained"
+              disabled={data.length < 1}
+              sx={{
+                bgcolor: "#b65dff",
+                "&:hover": { bgcolor: "#7b3ead" },
+                width: "10rem",
+                height: "3.5rem",
+                color: "white",
+              }}
+              onClick={handleBuyCart}
+            >
+              <strong>Buy Cart</strong>
+            </Button>
+            <Button
+              variant="contained"
+              disabled={data.length < 1}
+              sx={{
+                bgcolor: "#b65dff",
+                "&:hover": { bgcolor: "#7b3ead" },
+                width: "10rem",
+                height: "3.5rem",
+                color: "white",
+              }}
+              onClick={handleClearCart}
+            >
+              <strong>Clear to cart</strong>
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#b65dff",
+                "&:hover": { bgcolor: "#7b3ead" },
+                width: "10rem",
+                height: "3.5rem",
+                color: "white",
+              }}
+              onClick={() => navigate(Routes.PRODUCTS)}
+            >
+              <strong>Go to Products</strong>
+            </Button>
+            <Button
+              variant="contained"
+              // disabled={IsOutOfStock}
+              sx={{
+                bgcolor: "#b65dff",
+                "&:hover": { bgcolor: "#7b3ead" },
+                width: "10rem",
+                height: "3.5rem",
+                color: "white",
+              }}
+              // onClick={handleClick}
+            >
+              <strong>My orders</strong>
+            </Button>
+          </Box>
         </Box>
       </Box>
     </Box>

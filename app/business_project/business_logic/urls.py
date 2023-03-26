@@ -13,8 +13,8 @@ urlpatterns = [
     path('product/categories', ProductsCategories.as_view(), name='product_categories'),
     path('product/<int:id>', ProductRetrieveUpdateDestroy.as_view(), name='product_rud'),
     path('product/top_rated_products', TopRatedProducts.as_view(), name='top_rated_products'),
-    path('orders/create/<int:cart_id>', CreateOrderAPIView.as_view(), name='create-order'),
     path('orders/', GetUserOrder.as_view(), name='get_user_order'),
     path('orders/<int:order_id>/items/', GetUserOrderItems.as_view(), name='get_user_order_items'),
-    path('cart/clear', ClearCartAPIView.as_view(),name='clear_cart')
+    path('orders/create/', CreateOrderAPIView.as_view(), name='create-order'),
+
 ]
