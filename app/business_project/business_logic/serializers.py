@@ -24,6 +24,11 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = '__all__'        
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+
 class CartSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
 
