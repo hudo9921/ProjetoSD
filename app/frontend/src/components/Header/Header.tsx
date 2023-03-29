@@ -14,8 +14,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import MoreIcon from "@mui/icons-material/MoreVert";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -35,6 +35,7 @@ import useLogIn from "../../hooks/use-login-in";
 import useUserInfo from "../../hooks/use-user-info";
 import { User } from "../../types";
 import useGetUserCart from "../../hooks/use-get-user-cart";
+import useGetUserCartQuery from "../../hooks/use-get-user-cart-query";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -119,10 +120,14 @@ export default function Header() {
       onClose={handleMenuClose}
     >
       <MenuItem onClick={handleMenuClose}>My account</MenuItem>
-      <MenuItem onClick={() => {
-        setTokens(null, null)
-        setUser(null)
-      }}>Log out</MenuItem>
+      <MenuItem
+        onClick={() => {
+          setTokens(null, null);
+          setUser(null);
+        }}
+      >
+        Log out
+      </MenuItem>
     </Menu>
   );
 
@@ -195,7 +200,8 @@ export default function Header() {
   const { accessToken, refreshToken, setTokens } = useAuth();
   const { mutateAsync } = useLogIn();
   const { mutateAsync: getUserInfo } = useUserInfo();
-  const { mutateAsync: getUserCart} = useGetUserCart();
+  const { userCart, refetch } = useGetUserCartQuery();
+  const { mutateAsync: getUserCart } = useGetUserCart();
 
   const [open, setOpen] = React.useState(false);
   const [cpf, setCpf] = React.useState<string>("");
@@ -205,8 +211,8 @@ export default function Header() {
     "success"
   );
   const [alertMessage, setAlertMessage] = React.useState<string>("");
-  const [user, setUser] = React.useState<User | null>(null)
-  const [cartQuantity, setCartQuantity] = React.useState<number>(0)
+  const [user, setUser] = React.useState<User | null>(null);
+  const [cartQuantity, setCartQuantity] = React.useState<number>(0);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -240,22 +246,17 @@ export default function Header() {
     if (accessToken) {
       getUserInfo()
         .then((data) => {
-          setUser(data)
-        })
-        .catch(() => {
-          console.log("deu ruim");
-        });
-      getUserCart()
-        .then((data) => {
-          let aux: number = 0;
-          data.items.forEach((item) => aux = aux + item.quantity)
-          setCartQuantity(aux)
+          setUser(data);
         })
         .catch(() => {
           console.log("deu ruim");
         });
     }
-  }, [accessToken, getUserCart, getUserInfo]);
+    refetch();
+    let aux: number = 0;
+    userCart?.items.forEach((item) => (aux = aux + item.quantity));
+    setCartQuantity(aux);
+  }, [accessToken, getUserCart, getUserInfo, refetch, userCart?.items]);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -312,7 +313,7 @@ export default function Header() {
               aria-label="show 4 new mails"
               color="inherit"
               onClick={() => {
-                navigate(Routes.USERCART)
+                navigate(Routes.USERCART);
               }}
             >
               <Badge
