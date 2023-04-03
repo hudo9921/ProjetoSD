@@ -110,21 +110,38 @@ class CreateOrderAPIView(APIView):
 class GetUserOrder(generics.ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
-    def get_queryset(self):
-        user = self.request.user
-        orders = Order.objects.filter(user=user)
-        return orders
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     orders = Order.objects.filter(user=user)
+    #     return orders
+    
+    def get(self, request):
+        data = []
+        for order in Order.objects.filter(user=self.request.user):
+            data.append({
+                'order': OrderSerializer(order).data,
+                'items': OrderItemSerializer(order.orderitem_set.all(), many=True).data
+            })
+        return Response(data)
+
 
 class GetUserOrderItems(generics.ListAPIView):
     serializer_class = OrderItemSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
-    def get_queryset(self):
-        user = self.request.user
-        order_id = self.kwargs['order_id']
-        queryset = OrderItem.objects.filter(order__id=order_id, order__user=user)
-        return queryset
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     order_id = self.kwargs['order_id']
+    #     queryset = OrderItem.objects.filter(order__id=order_id, order__user=user)
+    #     return queryset
+    
+    def get(self, request, order_id):
+        queryset = OrderItem.objects.filter(order__id=order_id, order__user=self.request.user)
+        serializer = OrderItemSerializer(queryset, many=True)
+        return Response(serializer.data)
         
 class ProductListCreate(generics.ListCreateAPIView):
     queryset = Product.objects.all()

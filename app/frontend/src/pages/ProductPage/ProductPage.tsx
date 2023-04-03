@@ -17,6 +17,7 @@ import ProductCard from "../../components/ProductsShowCase/ProductCard";
 import useProducts from "../../hooks/use-products";
 import { useAuth } from "../../context";
 import useAddProductToCart from "../../hooks/use-add-product-to-cart";
+import { useQueryClient } from "react-query";
 
 const styles = {
   root: {
@@ -132,6 +133,7 @@ const ProductPage = (props: Props) => {
   const IsOutOfStock = useMemo(() => product!?.stock_quant <= 0, [product]);
   const { mutateAsync } = useAddProductToCart(product!?.id, quantity);
   const { accessToken } = useAuth();
+  const queryClient = useQueryClient();
 
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLElement>) => {
@@ -149,6 +151,7 @@ const ProductPage = (props: Props) => {
           setOpen(true);
           setSeverity("success");
           setAlertMessage("Product added to cart.");
+          queryClient.invalidateQueries({ queryKey: ["get-user-cart-query"] });
         })
         .catch((reason) => {
           setOpen(true);
@@ -157,7 +160,7 @@ const ProductPage = (props: Props) => {
         })
       }
     },
-    [accessToken, mutateAsync, product, quantity]
+    [accessToken, mutateAsync, product, quantity, queryClient]
   );
 
   if (isFetching || isLoading) {

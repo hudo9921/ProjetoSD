@@ -14,6 +14,6 @@ urlpatterns = [
     path('product/<int:id>', ProductRetrieveUpdateDestroy.as_view(), name='product_rud'),
     path('product/top_rated_products', TopRatedProducts.as_view(), name='top_rated_products'),
     path('orders/', GetUserOrder.as_view(), name='get_user_order'),
-    path('orders/<int:order_id>/items/', GetUserOrderItems.as_view(), name='get_user_order_items'),
+    path('orders/<int:order_id>', GetUserOrderItems.as_view(), name='get_user_order_items'),
     path('orders/create/', CreateOrderAPIView.as_view(), name='create-order'),
 ]

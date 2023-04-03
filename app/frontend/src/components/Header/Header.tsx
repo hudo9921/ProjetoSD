@@ -36,6 +36,8 @@ import useUserInfo from "../../hooks/use-user-info";
 import { User } from "../../types";
 import useGetUserCart from "../../hooks/use-get-user-cart";
 import useGetUserCartQuery from "../../hooks/use-get-user-cart-query";
+import useGetUserOrders from "../../hooks/use-get-user-orders";
+import { useQueryClient } from "react-query";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -84,6 +86,10 @@ export default function Header() {
 
   const isMenuOpen = Boolean(anchorEl);
   const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
+  const { userCart, refetch } = useGetUserCartQuery();
+  const { useOrders, refetch: refetchOrders } = useGetUserOrders();
+  const [cartQuantity, setCartQuantity] = React.useState<number>(0);
+  const [orderQuantity, setOrderQuantity] = React.useState<number>(0);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -124,6 +130,8 @@ export default function Header() {
         onClick={() => {
           setTokens(null, null);
           setUser(null);
+          setCartQuantity(0);
+          setOrderQuantity(0);
         }}
       >
         Log out
@@ -200,7 +208,6 @@ export default function Header() {
   const { accessToken, refreshToken, setTokens } = useAuth();
   const { mutateAsync } = useLogIn();
   const { mutateAsync: getUserInfo } = useUserInfo();
-  const { userCart, refetch } = useGetUserCartQuery();
   const { mutateAsync: getUserCart } = useGetUserCart();
 
   const [open, setOpen] = React.useState(false);
@@ -212,7 +219,8 @@ export default function Header() {
   );
   const [alertMessage, setAlertMessage] = React.useState<string>("");
   const [user, setUser] = React.useState<User | null>(null);
-  const [cartQuantity, setCartQuantity] = React.useState<number>(0);
+
+  const queryClient = useQueryClient();
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -234,6 +242,8 @@ export default function Header() {
         setAlertMessage("Successfully logged in.");
         setOpen(false);
         setTokens(access, refresh);
+        queryClient.invalidateQueries({ queryKey: ["get-user-cart-query"] });
+        queryClient.invalidateQueries({ queryKey: ["get-user-orders"] });
       })
       .catch((reason) => {
         setOpenAlert(true);
@@ -252,11 +262,14 @@ export default function Header() {
           console.log("deu ruim");
         });
     }
-    refetch();
+
     let aux: number = 0;
     userCart?.items.forEach((item) => (aux = aux + item.quantity));
     setCartQuantity(aux);
-  }, [accessToken, getUserCart, getUserInfo, refetch, userCart?.items]);
+
+    setOrderQuantity(useOrders!?.length);
+    
+  }, [accessToken, getUserCart, getUserInfo, queryClient, refetch, refetchOrders, useOrders, userCart?.items]);
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -332,9 +345,12 @@ export default function Header() {
               size="large"
               aria-label="show 17 new notifications"
               color="inherit"
+              onClick={() => {
+                navigate(Routes.USERORDERS)
+              }}
             >
               <Badge
-                badgeContent={17}
+                badgeContent={orderQuantity}
                 color="error"
                 sx={{
                   "& .MuiBadge-colorError": {
