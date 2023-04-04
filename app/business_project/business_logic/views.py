@@ -10,6 +10,7 @@ from rest_framework import generics, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
 from decimal import Decimal
+from .tasks import send_order_confirmation_email
 
 class AddToCartAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -104,8 +105,22 @@ class CreateOrderAPIView(APIView):
         user_cart.cartitem_set.all().delete()
 
         serializer = OrderSerializer(order)
+        
+        send_order_confirmation_email.delay(order.id)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+class TestEmailService(APIView):
+    permission_classes = []
+    
+    def get(self, request, *args, **kwargs):
+
+        order = Order.objects.all()[0]
+
+        send_order_confirmation_email.delay(order.id)
+
+        return Response('teste')
 
 class GetUserOrder(generics.ListAPIView):
     serializer_class = OrderSerializer

@@ -27,7 +27,7 @@ function useGetUserOrders() {
     },
     {
       staleTime: Infinity,
-      // refetchInterval: 1500, 
+      refetchInterval: 1500, 
     }
   );
 
